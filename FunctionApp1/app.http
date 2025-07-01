@@ -1,0 +1,20 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+
+@hostname=localhost
+@port=7090
+
+GET http://{{hostname}}:{{port}}/api/Function1
+
+###
+
+POST http://{{hostname}}:{{port}}/api/Function1
+Content-Type: application/json
+
+{
+  "name" : "Wong Kian Yoou",
+  "type" : "POST",
+  "test" : "Azure Function"
+}
+
+
+###
