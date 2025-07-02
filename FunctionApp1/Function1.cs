@@ -5,23 +5,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using FromBodyAttribute = Microsoft.Azure.Functions.Worker.Http.FromBodyAttribute;
 
 namespace FunctionApp1;
 
 public class Function1
 {
     private readonly ILogger<Function1> _logger;
-
-    public class HttpRequestObject
-    {
-        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string RequestId { get; set; }
-        public string Headers { get; set; }
-        public string Method { get; set; }
-        public string Path { get; set; }
-        public string Body { get; set; }
-    }
 
     public class User
     {
@@ -34,7 +23,6 @@ public class Function1
     public class MyDbContext : DbContext
     {
         public MyDbContext(DbContextOptions<MyDbContext> options) : base(options) { }
-        public DbSet<HttpRequestObject> Requests { get; set; }
         public DbSet<User> Users { get; set; }
     }
 
@@ -43,29 +31,24 @@ public class Function1
         _logger = logger;
     }
 
-    [Function("AddUser")]
-    public async Task<IActionResult> AddUser([HttpTrigger(AuthorizationLevel.Anonymous, "post"), FromBody] User newUser)
+    [Function("AddUserTimer")]
+    public async Task AddUserTimer([TimerTrigger("30 * * * * *")] TimerInfo myTimer)
     {
-        if (newUser == null) return new BadRequestResult();
+        _logger.LogInformation("C# Timer trigger function executed at: {executionTime}", DateTime.Now);
+        await AddUserMethod();
 
-        _logger.LogInformation($"User Name: {newUser.UserName}\nUser Age: {newUser.Age}");
-
-        var options = new DbContextOptionsBuilder<MyDbContext>()
-            .UseInMemoryDatabase(databaseName: "UserDatabase")
-            .Options;
-
-        using (var context = new MyDbContext(options))
+        if (myTimer.ScheduleStatus is not null)
         {
-            context.Users.Add(new User
-            {
-                UserId = newUser.UserId,
-                UserName = newUser.UserName,
-                Age = newUser.Age
-            });
-            context.SaveChanges();
+            _logger.LogInformation("Next timer schedule at: {nextSchedule}", myTimer.ScheduleStatus.Next);
         }
+    }
 
-        return new OkObjectResult(newUser);
+    [Function("AddUser")]
+    public async Task<IActionResult> AddUser()
+    {
+        AddUserMethod();
+
+        return new OkObjectResult("Success");
     }
 
     [Function("GetUser")]
@@ -91,4 +74,28 @@ public class Function1
         }
     }
 
+    private async Task AddUserMethod()
+    {
+        var ageRandomizer = new Random();
+        User newUser = new();
+        newUser.UserName = "Wong";
+        newUser.Age = ageRandomizer.Next(20, 40).ToString();
+
+        _logger.LogInformation($"User Name: {newUser.UserName}\nUser Age: {newUser.Age}");
+
+        var options = new DbContextOptionsBuilder<MyDbContext>()
+            .UseInMemoryDatabase(databaseName: "UserDatabase")
+            .Options;
+
+        using (var context = new MyDbContext(options))
+        {
+            context.Users.Add(newUser);
+            context.SaveChanges();
+
+
+            _logger.LogInformation($"New User Added :" +
+                $"\nUser Name: {newUser.UserName}" +
+                $"\nUser Age : {newUser.Age}");
+        }
+    }
 }

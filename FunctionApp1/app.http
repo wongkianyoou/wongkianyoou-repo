@@ -3,30 +3,12 @@
 @hostname=localhost
 @port=7090
 
-GET http://{{hostname}}:{{port}}/api/GetRequest
-
-###
-
 GET http://{{hostname}}:{{port}}/api/GetUser
-
 ###
-
-POST http://{{hostname}}:{{port}}/api/AddRequest
-Content-Type: application/json
-{
-  "UserId": "1",
-  "UserName": "Wong Kian Yoou",
-  "Age": "22"
-}
-
-###
-
 POST http://{{hostname}}:{{port}}/api/AddUser
 Content-Type: application/json
 {
-  "UserId": "1",
   "UserName": "Wong Kian Yoou",
   "Age": "22"
 }
-
 ###
