@@ -7,8 +7,4 @@ GET http://{{hostname}}:{{port}}/api/GetUser
 ###
 POST http://{{hostname}}:{{port}}/api/AddUser
 Content-Type: application/json
-{
-  "UserName": "Wong Kian Yoou",
-  "Age": "22"
-}
 ###

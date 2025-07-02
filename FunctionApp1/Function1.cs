@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
@@ -32,19 +33,19 @@ public class Function1
     }
 
     [Function("AddUserTimer")]
-    public async Task AddUserTimer([TimerTrigger("30 * * * * *")] TimerInfo myTimer)
+    public async Task AddUserTimer([TimerTrigger("*/30 * * * * *")] TimerInfo myTimer)
     {
         _logger.LogInformation("C# Timer trigger function executed at: {executionTime}", DateTime.Now);
         await AddUserMethod();
 
         if (myTimer.ScheduleStatus is not null)
         {
-            _logger.LogInformation("Next timer schedule at: {nextSchedule}", myTimer.ScheduleStatus.Next);
+            _logger.LogInformation("Next timer schedule at: {nextSchedule}", myTimer.ScheduleStatus.Next.AddSeconds(30));
         }
     }
 
     [Function("AddUser")]
-    public async Task<IActionResult> AddUser()
+    public async Task<IActionResult> AddUser([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData _)
     {
         AddUserMethod();
 
@@ -62,9 +63,11 @@ public class Function1
         {
             var query = await context.Users.ToListAsync();
 
+            if (query.Count > 0) _logger.LogInformation($"Records in In-Memory Database : ");
+
             foreach (var user in query)
             {
-                _logger.LogInformation($"Records in In-Memory Database : " +
+                _logger.LogInformation(
                     $"\nUser Id\t\t: {user.UserId}" +
                     $"\nUser Name\t: {user.UserName}" +
                     $"\nUser Age\t: {user.Age}");
@@ -93,7 +96,7 @@ public class Function1
             context.SaveChanges();
 
 
-            _logger.LogInformation($"New User Added :" +
+            _logger.LogInformation($"\nNew User Added :" +
                 $"\nUser Name: {newUser.UserName}" +
                 $"\nUser Age : {newUser.Age}");
         }
