@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using FromBodyAttribute = Microsoft.Azure.Functions.Worker.Http.FromBodyAttribute;
 
 namespace FunctionApp1;
 
@@ -15,14 +16,21 @@ public class Function1
 
     public class HttpRequestObject
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string requestId { get; set; }
-        public string headers { get; set; }
-        public string method { get; set; }
-        public string path { get; set; }
-        public string body { get; set; }
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public string RequestId { get; set; }
+        public string Headers { get; set; }
+        public string Method { get; set; }
+        public string Path { get; set; }
+        public string Body { get; set; }
 
+    }
+
+    public class User
+    {
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public string? UserId { get; set; }
+        public string? UserName { get; set; }
+        public string? Age { get; set; }
     }
     public class MyDbContext : DbContext
     {
@@ -32,6 +40,8 @@ public class Function1
 
         public DbSet<HttpRequestObject> Requests { get; set; }
 
+        public DbSet<User> Users { get; set; }
+
     }
 
     public Function1(ILogger<Function1> logger)
@@ -39,8 +49,8 @@ public class Function1
         _logger = logger;
     }
 
-    [Function("Function1")]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req)
+    [Function("AddRequest")]
+    public async Task<IActionResult> AddRequest([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req)
     {
         _logger.LogInformation("C# HTTP trigger function processed a request.");
 
@@ -48,6 +58,7 @@ public class Function1
         string requestMethod = req.Method;
         string requestPath = req.Path;
         string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+        User user = JsonConvert.DeserializeObject<User>(requestBody);
 
         _logger.LogInformation($"Request Body : {requestBody}");
 
@@ -59,27 +70,90 @@ public class Function1
         {
             context.Requests.Add(new HttpRequestObject
             {
-                headers = requestHeader,
-                method = requestMethod,
-                path = requestPath,
-                body = requestBody
+                Headers = requestHeader,
+                Method = requestMethod,
+                Path = requestPath,
+                Body = requestBody
             });
             context.SaveChanges();
 
+        }
+
+        var name = user.UserName;
+        return new OkObjectResult($"Welcome to Azure Functions! by {name}");
+    }
+
+    [Function("GetRequest")]
+    public async Task<IActionResult> GetRequest([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req)
+    {
+        var options = new DbContextOptionsBuilder<MyDbContext>()
+            .UseInMemoryDatabase(databaseName: "RequestDatabase")
+            .Options;
+
+        using (var context = new MyDbContext(options))
+        {
             var query = await context.Requests.ToListAsync();
 
             foreach (var request in query)
             {
                 _logger.LogInformation($"Records in In-Memory Database : " +
-                    $"\nRecord Header\t: {JsonConvert.SerializeObject(request.headers)}" +
-                    $"\nRecord Method\t: {request.method}" +
-                    $"\nRecord Path\t: {request.path}" +
-                    $"\nRecord Body\t: {request.body}");
+                    $"\nRecord Header\t: {request.Headers}" +
+                    $"\nRecord Method\t: {request.Method}" +
+                    $"\nRecord Path\t: {request.Path}" +
+                    $"\nRecord Body\t: {request.Body}");
             }
+
+            return new OkObjectResult(query);
+        }
+    }
+
+    [Function("AddUser")]
+    public async Task<IActionResult> AddUser([HttpTrigger(AuthorizationLevel.Anonymous, "post"), FromBody] User newUser)
+    {
+        if (newUser == null) return new BadRequestResult();
+
+        _logger.LogInformation($"User Name: {newUser.UserName}\nUser Age: {newUser.Age}");
+
+        var options = new DbContextOptionsBuilder<MyDbContext>()
+            .UseInMemoryDatabase(databaseName: "UserDatabase")
+            .Options;
+
+        using (var context = new MyDbContext(options))
+        {
+            context.Users.Add(new User
+            {
+                UserId = newUser.UserId,
+                UserName = newUser.UserName,
+                Age = newUser.Age
+            });
+            context.SaveChanges();
 
         }
 
-        string name = "Wong Kian Yoou";
-        return new OkObjectResult($"Welcome to Azure Functions! by {name}");
+        return new OkObjectResult(newUser);
     }
+
+    [Function("GetUser")]
+    public async Task<IActionResult> GetUser([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req)
+    {
+        var options = new DbContextOptionsBuilder<MyDbContext>()
+            .UseInMemoryDatabase(databaseName: "UserDatabase")
+            .Options;
+
+        using (var context = new MyDbContext(options))
+        {
+            var query = await context.Users.ToListAsync();
+
+            foreach (var user in query)
+            {
+                _logger.LogInformation($"Records in In-Memory Database : " +
+                    $"\nUser Id\t\t: {user.UserId}" +
+                    $"\nUser Name\t: {user.UserName}" +
+                    $"\nUser Age\t: {user.Age}");
+            }
+
+            return new OkObjectResult(query);
+        }
+    }
+
 }
