@@ -16,7 +16,7 @@ public class Function1
     public class User
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string? UserId { get; set; }
+        public string? Id { get; set; }
         public string? UserName { get; set; }
         public string? Age { get; set; }
     }
@@ -53,7 +53,7 @@ public class Function1
     }
 
     [Function("GetUser")]
-    public async Task<IActionResult> GetUser([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req)
+    public async Task<IActionResult> GetUser([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest _)
     {
         var options = new DbContextOptionsBuilder<MyDbContext>()
             .UseInMemoryDatabase(databaseName: "UserDatabase")
@@ -68,7 +68,7 @@ public class Function1
             foreach (var user in query)
             {
                 _logger.LogInformation(
-                    $"\nUser Id\t\t: {user.UserId}" +
+                    $"\nUser Id\t\t: {user.Id}" +
                     $"\nUser Name\t: {user.UserName}" +
                     $"\nUser Age\t: {user.Age}");
             }
@@ -94,7 +94,6 @@ public class Function1
         {
             context.Users.Add(newUser);
             context.SaveChanges();
-
 
             _logger.LogInformation($"\nNew User Added :" +
                 $"\nUser Name: {newUser.UserName}" +
