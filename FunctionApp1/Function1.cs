@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using FromBodyAttribute = Microsoft.Azure.Functions.Worker.Http.FromBodyAttribute;
 
 namespace FunctionApp1;
 
@@ -36,7 +36,7 @@ public class Function1
     public async Task AddUserTimer([TimerTrigger("*/30 * * * * *")] TimerInfo myTimer)
     {
         _logger.LogInformation("C# Timer trigger function executed at: {executionTime}", DateTime.Now);
-        await AddUserMethod();
+        await AddUserMethod(null);
 
         if (myTimer.ScheduleStatus is not null)
         {
@@ -45,9 +45,12 @@ public class Function1
     }
 
     [Function("AddUser")]
-    public async Task<IActionResult> AddUser([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData _)
+    public async Task<IActionResult> AddUser([HttpTrigger(AuthorizationLevel.Anonymous, "post"), FromBody] User newUser)
     {
-        await AddUserMethod();
+        _logger.LogInformation($"Request User : " +
+            $"\nUser Name : {newUser.UserName}" +
+            $"\nUser Age  : {newUser.Age}");
+        await AddUserMethod(newUser);
 
         return new OkObjectResult("Success");
     }
@@ -77,12 +80,17 @@ public class Function1
         }
     }
 
-    private Task AddUserMethod()
+    private Task AddUserMethod(User? newUser = null)
     {
-        var ageRandomizer = new Random();
-        User newUser = new();
-        newUser.UserName = "Wong";
-        newUser.Age = ageRandomizer.Next(20, 40).ToString();
+        if (newUser == null)
+        {
+            var ageRandomizer = new Random();
+            newUser = new()
+            {
+                UserName = "Wong",
+                Age = ageRandomizer.Next(20, 40).ToString()
+            };
+        }
 
         _logger.LogInformation($"User Name: {newUser.UserName}\nUser Age: {newUser.Age}");
 

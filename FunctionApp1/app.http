@@ -7,4 +7,22 @@ GET http://{{hostname}}:{{port}}/api/GetUser
 ###
 POST http://{{hostname}}:{{port}}/api/AddUser
 Content-Type: application/json
+{
+  "UserName": "Alex",
+  "Age": "30"
+}
+###
+POST http://{{hostname}}:{{port}}/api/AddUser
+Content-Type: application/json
+{
+  "UserName": "John",
+  "Age": "24"
+}
+###
+POST http://{{hostname}}:{{port}}/api/AddUser
+Content-Type: application/json
+{
+  "UserName": "Kobe",
+  "Age": "27"
+}
 ###
