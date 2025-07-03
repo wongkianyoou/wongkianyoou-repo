@@ -40,14 +40,14 @@ public class Function1
 
         if (myTimer.ScheduleStatus is not null)
         {
-            _logger.LogInformation("Next timer schedule at: {nextSchedule}", myTimer.ScheduleStatus.Next.AddSeconds(30));
+            _logger.LogInformation("Next timer schedule at: {nextSchedule}", myTimer.ScheduleStatus.Next);
         }
     }
 
     [Function("AddUser")]
     public async Task<IActionResult> AddUser([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData _)
     {
-        AddUserMethod();
+        await AddUserMethod();
 
         return new OkObjectResult("Success");
     }
@@ -77,7 +77,7 @@ public class Function1
         }
     }
 
-    private async Task AddUserMethod()
+    private Task AddUserMethod()
     {
         var ageRandomizer = new Random();
         User newUser = new();
@@ -99,5 +99,7 @@ public class Function1
                 $"\nUser Name: {newUser.UserName}" +
                 $"\nUser Age : {newUser.Age}");
         }
+
+        return Task.CompletedTask;
     }
 }
