@@ -47,7 +47,9 @@ public class Function1
     [Function("AddUser")]
     public async Task<IActionResult> AddUser([HttpTrigger(AuthorizationLevel.Anonymous, "post"), FromBody] User newUser)
     {
-        _logger.LogInformation($"Request User : " +
+        if (newUser is null) return new BadRequestObjectResult("Incorrect Data");
+
+        _logger.LogInformation($"\nRequest User : " +
             $"\nUser Name : {newUser.UserName}" +
             $"\nUser Age  : {newUser.Age}");
         await AddUserMethod(newUser);
@@ -80,19 +82,14 @@ public class Function1
         }
     }
 
-    private Task AddUserMethod(User? newUser = null)
+    private Task AddUserMethod()
     {
-        if (newUser == null)
+        var ageRandomizer = new Random();
+        User newUser = new()
         {
-            var ageRandomizer = new Random();
-            newUser = new()
-            {
-                UserName = "Wong",
-                Age = ageRandomizer.Next(20, 40).ToString()
-            };
-        }
-
-        _logger.LogInformation($"User Name: {newUser.UserName}\nUser Age: {newUser.Age}");
+            UserName = "Wong",
+            Age = ageRandomizer.Next(20, 40).ToString()
+        };
 
         var options = new DbContextOptionsBuilder<MyDbContext>()
             .UseInMemoryDatabase(databaseName: "UserDatabase")
@@ -108,6 +105,24 @@ public class Function1
                 $"\nUser Age : {newUser.Age}");
         }
 
+        return Task.CompletedTask;
+    }
+
+    private Task AddUserMethod(User newUser)
+    {
+        var options = new DbContextOptionsBuilder<MyDbContext>()
+            .UseInMemoryDatabase(databaseName: "UserDatabase")
+            .Options;
+
+        using (var context = new MyDbContext(options))
+        {
+            context.Users.Add(newUser);
+            context.SaveChanges();
+
+            _logger.LogInformation($"\nNew User Added :" +
+                $"\nUser Name: {newUser.UserName}" +
+                $"\nUser Age : {newUser.Age}");
+        }
         return Task.CompletedTask;
     }
 }
