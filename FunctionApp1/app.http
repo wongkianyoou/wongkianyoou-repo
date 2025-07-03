@@ -3,18 +3,8 @@
 @hostname=localhost
 @port=7090
 
-GET http://{{hostname}}:{{port}}/api/Function1
-
+GET http://{{hostname}}:{{port}}/api/GetUser
 ###
-
-POST http://{{hostname}}:{{port}}/api/Function1
+POST http://{{hostname}}:{{port}}/api/AddUser
 Content-Type: application/json
-
-{
-  "name" : "Wong Kian Yoou",
-  "type" : "POST",
-  "test" : "Azure Function"
-}
-
-
 ###
