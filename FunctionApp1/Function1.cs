@@ -36,7 +36,7 @@ public class Function1
     public async Task AddUserTimer([TimerTrigger("*/30 * * * * *")] TimerInfo myTimer)
     {
         _logger.LogInformation("C# Timer trigger function executed at: {executionTime}", DateTime.Now);
-        await AddUserMethod(null);
+        await AddUserMethod();
 
         if (myTimer.ScheduleStatus is not null)
         {
