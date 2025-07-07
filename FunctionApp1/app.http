@@ -5,24 +5,47 @@
 
 GET http://{{hostname}}:{{port}}/api/GetUser
 ###
+GET http://{{hostname}}:{{port}}/api/GetUserAbove
+Content-Type: application/json
+{
+  "Age": 25
+}
+###
 POST http://{{hostname}}:{{port}}/api/AddUser
 Content-Type: application/json
 {
   "UserName": "Alex",
-  "Age": "30"
+  "Age": 30
 }
 ###
 POST http://{{hostname}}:{{port}}/api/AddUser
 Content-Type: application/json
 {
   "UserName": "John",
-  "Age": "24"
+  "Age": 24
 }
 ###
-POST http://{{hostname}}:{{port}}/api/AddUser
+POST http://{{hostname}}:{{port}}/api/AddUsers
+Content-Type: application/json
+[
+  {  
+    "UserName": "Kobe",
+    "Age": 27
+  },
+  {
+    "UserName": "Name1",
+    "Age": 23
+  },
+  {
+    "UserName": "John",
+    "Age": 26
+  }
+]
+###
+DELETE http://{{hostname}}:{{port}}/api/DeleteUser
 Content-Type: application/json
 {
-  "UserName": "Kobe",
-  "Age": "27"
+  "UserName": "John",
+  "Age": 24
 }
 ###
